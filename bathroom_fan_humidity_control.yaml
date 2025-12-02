@@ -1,0 +1,86 @@
+blueprint:
+  name: Bathroom Fan Humidity Control
+  description: Manage an exhaust fan based on humidity
+  domain: automation
+  source_url: https://github.com/kenyonj/ha-blueprints/blob/main/bathroom_fan_humidity_control.yaml
+  author: kenyonj
+  input:
+    humidity_sensor:
+      name: Humidity Sensor
+      selector:
+        entity:
+          filter:
+            domain: sensor
+    exhaust_fan_switch:
+      name: Exhaust Fan Switch
+      selector:
+        entity:
+          filter:
+            domain: switch
+    helper_high_humidity_number:
+      name: (Required) Helper - High Humidity Number
+      description: Input number for the humidity number that will trigger this automation. You will need to manually create a number input entity for this, please read the blueprint Additional Notes for more info.
+      default: ""
+      selector:
+        entity:
+          domain: input_number
+    helper_humidity_control_is_active:
+      name: (Required) Helper - Humidity Control Is Active
+      description: Input boolean for whether or not this exhause fan has been turned on via humidity control automations.
+      default: ""
+      selector:
+        entity:
+          domain: input_boolean
+triggers:
+  - trigger: numeric_state
+    entity_id: !input humidity_sensor
+    above: !input helper_high_humidity_number
+    id: humid
+  - trigger: numeric_state
+    entity_id: !input humidity_sensor
+    below: !input helper_high_humidity_number
+    id: arid
+    for:
+      minutes: 5
+
+variables:
+  humidity_sensor: !input humidity_sensor
+  exhaust_fan_switch: !input exhaust_fan_switch
+  helper_humidity_control_is_active: !input helper_humidity_control_is_active
+
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id:
+              - humid
+        sequence:
+          - if:
+              - condition: device
+                type: is_off
+                entity_id: !input exhaust_fan_switch
+            then:
+              - type: turn_on
+                entity_id: !input exhaust_fan_switch
+          - action: input_boolean.turn_on
+            target:
+              entity_id: !input helper_humidity_control_is_active
+      - conditions:
+          - condition: trigger
+            id:
+              - arid
+          - condition: state
+            entity_id: !input helper_humidity_control_is_active
+            state:
+              - "on"
+        sequence:
+          - if:
+              - condition: device
+                type: is_on
+                entity_id: !input exhaust_fan_switch
+            then:
+              - type: turn_off
+                entity_id: !input exhaust_fan_switch
+          - action: input_boolean.turn_off
+            target:
+              entity_id: !input helper_humidity_control_is_active
