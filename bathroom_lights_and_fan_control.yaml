@@ -1,0 +1,207 @@
+blueprint:
+  name: Bathroom Lights and Fan Control
+  description: Manage lights and exhaust fan for a bathroom. This is based on occupancy and humidity.
+  domain: automation
+  source_url: https://github.com/kenyonj/ha-blueprints/blob/main/bathroom_lights_and_fan_control.yaml
+  author: kenyonj
+  input:
+    occupancy_sensor:
+      name: Occupancy Sensor
+      selector:
+        entity:
+          domain: sensor
+          device_class: occupancy
+    humidity_sensor:
+      name: Humidity Sensor
+      selector:
+        entity:
+          domain: sensor
+          device_class: humidity
+    light_switch:
+      name: Light Switch
+      selector:
+        entity:
+          domain: switch
+    exhaust_fan_switch:
+      name: Exhaust Fan Switch
+      selector:
+        entity:
+          domain: switch
+    helper_high_humidity_number:
+      name: (Required) Helper - High Humidity Number
+      description: Input number for the humidity number that will trigger this automation. You will need to manually create a number input entity for this, please read the blueprint Additional Notes for more info.
+      default: ""
+      selector:
+        entity:
+          domain: input_number
+    helper_time_for_fan_to_run_after_unoccupied:
+      name: (Required) Helper - Time for fan to run after unoccupied
+      description: Input number for the amount of time the exhaust fan should run after the bathroom becomes unoccupied (in seconds).
+      default: ""
+      selector:
+        entity:
+          domain: input_number
+    helper_time_before_exhaust_fan_turns_on_after_occupied:
+      name: (Required) Helper - Time before exhause fan turns on after occupied
+      description: Input number for the amount of time after the bathroom is occupied to wait until turning on the exhaust fan (in seconds).
+      default: ""
+      selector:
+        entity:
+          domain: input_number
+    helper_time_for_light_to_stay_on_after_unoccupied:
+      name: (Required) Helper - Time for light to stay on after unoccupied
+      description: Input number for the amount of time the light should stay on after the bathroom becomes unoccupied (in seconds).
+      default: ""
+      selector:
+        entity:
+          domain: input_number
+    helper_humidity_control_is_active:
+      name: (Required) Helper - Humidity Control Is Active
+      description: Input boolean for whether or not this exhaust fan has been turned on via humidity control automations.
+      default: ""
+      selector:
+        entity:
+          domain: input_boolean
+
+triggers:
+  - trigger: numeric_state
+    entity_id: !input humidity_sensor
+    above: !input helper_high_humidity_number
+    id: humid
+  - trigger: numeric_state
+    entity_id: !input humidity_sensor
+    below: !input helper_high_humidity_number
+    id: arid
+    for:
+      minutes: 5
+  - trigger: state
+    entity_id: !input occupancy_sensor
+    from:
+      - "off"
+    to:
+      - "on"
+    for:
+      seconds: !input helper_time_before_exhaust_fan_turns_on_after_occupied
+    id: occupied_fan
+  - trigger: state
+    entity_id: !input occupancy_sensor
+    from:
+      - "on"
+    to:
+      - "off"
+    for:
+      seconds: !input helper_time_for_fan_to_run_after_unoccupied
+    id: unoccupied_fan
+  - trigger: state
+    entity_id: !input occupancy_sensor
+    from:
+      - "off"
+    to:
+      - "on"
+    id: occupied
+  - trigger: state
+    entity_id: !input occupancy_sensor
+    from:
+      - "on"
+    to:
+      - "off"
+    id: unoccupied
+    for:
+      seconds: !input helper_time_for_light_to_stay_on_after_unoccupied
+
+variables:
+  humidity_sensor: !input humidity_sensor
+  occupancy_sensor: !input occupancy_sensor
+  light_switch: !input light_switch
+  exhaust_fan_switch: !input exhaust_fan_switch
+  helper_humidity_control_is_active: !input helper_humidity_control_is_active
+  helper_time_for_fan_to_run_after_unoccupied: !input helper_time_for_fan_to_run_after_unoccupied
+  helper_time_for_light_to_stay_on_after_unoccupied: !input helper_time_for_light_to_stay_on_after_unoccupied
+  helper_time_before_exhaust_fan_turns_on_after_occupied: !input helper_time_before_exhaust_fan_turns_on_after_occupied
+
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id:
+              - occupied
+          - condition: state
+            entity_id: !input light_switch
+            state: "off"
+            sequence:
+              - action: switch.turn_on
+                target:
+                  entity_id: !input light_switch
+      - conditions:
+          - condition: trigger
+            id:
+              - unoccupied
+          - condition: state
+            entity_id: !input light_switch
+            state: "on"
+            sequence:
+              - action: switch.turn_off
+                target:
+                  entity_id: !input light_switch
+      - conditions:
+          - condition: trigger
+            id:
+              - occupied_fan
+            sequence:
+              - if:
+                  - condition: state
+                    entity_id: !input exhaust_fan_switch
+                    state: "off"
+                then:
+                  - action: switch.turn_on
+                    target:
+                      entity_id: !input exhaust_fan_switch
+      - conditions:
+          - condition: trigger
+            id:
+              - unoccupied_fan
+            sequence:
+              - if:
+                  - condition: state
+                    entity_id: !input exhaust_fan_switch
+                    state: "on"
+                then:
+                  - action: switch.turn_off
+                    target:
+                      entity_id: !input exhaust_fan_switch
+      - conditions:
+          - condition: trigger
+            id:
+              - humid
+        sequence:
+          - if:
+              - condition: state
+                entity_id: !input exhaust_fan_switch
+                state: "off"
+            then:
+              - action: switch.turn_on
+                target:
+                  entity_id: !input exhaust_fan_switch
+          - action: input_boolean.turn_on
+            target:
+              entity_id: !input helper_humidity_control_is_active
+      - conditions:
+          - condition: trigger
+            id:
+              - arid
+          - condition: state
+            entity_id: !input helper_humidity_control_is_active
+            state:
+              - "on"
+        sequence:
+          - if:
+              - condition: state
+                entity_id: !input exhaust_fan_switch
+                state: "on"
+            then:
+              - action: switch.turn_off
+                target:
+                  entity_id: !input exhaust_fan_switch
+          - action: input_boolean.turn_off
+            target:
+              entity_id: !input helper_humidity_control_is_active
