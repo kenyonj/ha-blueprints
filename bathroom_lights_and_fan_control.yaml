@@ -9,7 +9,8 @@ blueprint:
       name: Occupancy Sensor
       selector:
         entity:
-          domain: sensor
+          domain: binary_sensor
+          device_class: occupancy
     humidity_sensor:
       name: Humidity Sensor
       selector:
@@ -20,7 +21,7 @@ blueprint:
       name: Light Switch
       selector:
         entity:
-          domain: light_switch
+          domain: light
     exhaust_fan_switch:
       name: Exhaust Fan Switch
       selector:
