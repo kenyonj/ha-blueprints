@@ -14,7 +14,7 @@ blueprint:
     exhaust_fan_switch:
       name: Exhaust Fan Switch
       selector:
-        entity:
+        device:
           filter:
             domain: switch
     helper_high_humidity_number:
@@ -58,10 +58,10 @@ actions:
           - if:
               - condition: device
                 type: is_off
-                entity_id: !input exhaust_fan_switch
+                device_id: !input exhaust_fan_switch
             then:
               - type: turn_on
-                entity_id: !input exhaust_fan_switch
+                device_id: !input exhaust_fan_switch
           - action: input_boolean.turn_on
             target:
               entity_id: !input helper_humidity_control_is_active
@@ -77,10 +77,10 @@ actions:
           - if:
               - condition: device
                 type: is_on
-                entity_id: !input exhaust_fan_switch
+                device_id: !input exhaust_fan_switch
             then:
               - type: turn_off
-                entity_id: !input exhaust_fan_switch
+                device_id: !input exhaust_fan_switch
           - action: input_boolean.turn_off
             target:
               entity_id: !input helper_humidity_control_is_active
