@@ -17,11 +17,18 @@ blueprint:
         entity:
           domain: sensor
           device_class: humidity
-    light_switch:
-      name: Light Switch
+    lights_to_turn_on:
+      name: Lights to turn on
       selector:
         entity:
           domain: light
+          multiple: true
+    lights_to_turn_off:
+      name: Lights to turn off
+      selector:
+        entity:
+          domain: light
+          multiple: true
     exhaust_fan_switch:
       name: Exhaust Fan Switch
       selector:
@@ -114,7 +121,8 @@ trigger:
 variables:
   humidity_sensor: !input humidity_sensor
   occupancy_sensor: !input occupancy_sensor
-  light_switch: !input light_switch
+  lights_to_turn_on: !input lights_to_turn_on
+  lights_to_turn_off: !input lights_to_turn_off
   exhaust_fan_switch: !input exhaust_fan_switch
   helper_humidity_control_is_active: !input helper_humidity_control_is_active
   time_for_fan_to_run_after_unoccupied: !input time_for_fan_to_run_after_unoccupied
@@ -126,23 +134,17 @@ action:
       - conditions:
           - condition: trigger
             id: occupied
-          - condition: state
-            entity_id: !input light_switch
-            state: "off"
         sequence:
           - service: light.turn_on
             target:
-              entity_id: !input light_switch
+              entity_id: !input lights_to_turn_on
       - conditions:
           - condition: trigger
             id: unoccupied
-          - condition: state
-            entity_id: !input light_switch
-            state: "on"
         sequence:
           - service: light.turn_off
             target:
-              entity_id: !input light_switch
+              entity_id: !input lights_to_turn_off
       - conditions:
           - condition: trigger
             id: occupied_fan
