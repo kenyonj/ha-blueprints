@@ -86,14 +86,14 @@ trigger:
     to: "on"
     id: occupied_fan
     for:
-      seconds: "{{ states(!input helper_time_before_exhaust_fan_turns_on_after_occupied) | int }}"
+      seconds: "{{ states(!input helper_time_before_exhaust_fan_turns_on_after_occupied) | float }}"
   - platform: state
     entity_id: !input occupancy_sensor
     from: "on"
     to: "off"
     id: unoccupied_fan
     for:
-      seconds: "{{ states(!input helper_time_for_fan_to_run_after_unoccupied) | int }}"
+      seconds: "{{ states(!input helper_time_for_fan_to_run_after_unoccupied) | float }}"
 
 variables:
   humidity_sensor: !input humidity_sensor
