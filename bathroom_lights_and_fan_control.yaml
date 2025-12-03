@@ -1,5 +1,5 @@
 blueprint:
-  name: Bathroom Lights and Fan Control (Feature Toggles Demo)
+  name: Bathroom Lights and Fan Control
   description: Manage multiple lights and exhaust fan for a bathroom. Toggle humidity, lights, or exhaust fan for toilet usage features. Optional feature inputs are only required if enabled.
   domain: automation
   source_url: https://github.com/kenyonj/ha-blueprints/blob/main/bathroom_lights_and_fan_control.yaml
