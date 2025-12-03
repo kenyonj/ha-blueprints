@@ -39,14 +39,14 @@ blueprint:
           device_class: humidity
     lights_to_turn_on:
       name: Lights to turn on
-      default: ""
+      default: []
       selector:
         entity:
           domain: light
           multiple: true
     lights_to_turn_off:
       name: Lights to turn off
-      default: ""
+      default: []
       selector:
         entity:
           domain: light
