@@ -1,65 +1,76 @@
 blueprint:
-  name: Bathroom Lights and Fan Control
-  description: Manage lights and exhaust fan for a bathroom. This is based on occupancy and humidity.
+  name: Bathroom Lights and Fan Control (Feature Toggles Demo)
+  description: Manage multiple lights and exhaust fan for a bathroom. Toggle humidity, lights, or exhaust fan for toilet usage features. Optional feature inputs are only required if enabled.
   domain: automation
   source_url: https://github.com/kenyonj/ha-blueprints/blob/main/bathroom_lights_and_fan_control.yaml
   author: kenyonj
+
   input:
+    # Feature Toggles
     enable_humidity_control:
       name: Enable Humidity Control
-      description: Enable/Disable humidity-based fan operation.
+      description: Enable humidity-based exhaust fan operation.
       default: true
       selector:
         boolean:
     enable_lights_control:
       name: Enable Lights Control
-      description: Enable/Disable light control based on occupancy.
+      description: Enable lights automation based on occupancy.
       default: true
       selector:
         boolean:
-    enable_exhaust_for_toilet:
-      name: Enable Toilet Exhaust Fan
-      description: Enable/Disable exhaust fan activation for toilet usage.
+    enable_exhaust_fan_toilet:
+      name: Enable Exhaust Fan for Toilet Usage
+      description: Enable exhaust fan when toilet is used (see description for trigger strategy).
       default: false
       selector:
         boolean:
+
+    # Shared Entities
     occupancy_sensor:
       name: Occupancy Sensor
-      default: ""
       selector:
         entity:
           domain: binary_sensor
           device_class: occupancy
+
+    # Lights (optional, only required if lights control enabled)
+    lights_to_turn_on:
+      name: Lights to turn on when occupied
+      description: Choose lights to turn on when the bathroom is occupied (only required if lights control is enabled).
+      selector:
+        entity:
+          domain: light
+          multiple: true
+      default: []
+    lights_to_turn_off:
+      name: Lights to turn off when unoccupied
+      description: Choose lights to turn off when the bathroom is unoccupied (only required if lights control is enabled).
+      selector:
+        entity:
+          domain: light
+          multiple: true
+      default: []
+
+    # Exhaust fan (optional, only required for humidity/toilet features)
+    exhaust_fan_switch:
+      name: Exhaust Fan Switch
+      selector:
+        entity:
+          domain: switch
+
+    # Humidity control (optional, only required if humidity control enabled)
     humidity_sensor:
       name: Humidity Sensor
-      default: ""
+      description: Required only if humidity control is enabled.
       selector:
         entity:
           domain: sensor
           device_class: humidity
-    lights_to_turn_on:
-      name: Lights to turn on
-      default: []
-      selector:
-        entity:
-          domain: light
-          multiple: true
-    lights_to_turn_off:
-      name: Lights to turn off
-      default: []
-      selector:
-        entity:
-          domain: light
-          multiple: true
-    exhaust_fan_switch:
-      name: Exhaust Fan Switch
       default: ""
-      selector:
-        entity:
-          domain: switch
     helper_high_humidity_number:
-      name: (Required) Helper - High Humidity Number
-      description: Input number for the humidity number that will trigger this automation. You will need to manually create a number input entity for this, please read the blueprint Additional Notes for more info.
+      name: Threshold - High Humidity Number (%)
+      description: Humidity value that will trigger exhaust fan. Only required if humidity control is enabled.
       default: 60
       selector:
         number:
@@ -67,9 +78,18 @@ blueprint:
           max: 80
           step: 1
           unit_of_measurement: percent
+    helper_humidity_control_is_active:
+      name: Helper - Humidity Control Is Active
+      description: Input boolean for whether or not the exhaust fan has been triggered via humidity automation (only required for humidity control).
+      selector:
+        entity:
+          domain: input_boolean
+      default: ""
+
+    # Timer options
     time_for_fan_to_run_after_unoccupied:
-      name: (Required) Helper - Time for fan to run after unoccupied
-      description: Input number for the amount of time the exhaust fan should run after the bathroom becomes unoccupied (in seconds).
+      name: Time for fan to run after unoccupied (sec)
+      description: Amount of time the exhaust fan should run after the bathroom becomes unoccupied.
       default: 600
       selector:
         number:
@@ -78,8 +98,8 @@ blueprint:
           step: 60
           unit_of_measurement: seconds
     time_before_exhaust_fan_turns_on_after_occupied:
-      name: (Required) Helper - Time before exhaust fan turns on after occupied
-      description: Input number for the amount of time after the bathroom is occupied to wait until turning on the exhaust fan (in seconds).
+      name: Delay before exhaust fan turns on after occupied (sec)
+      description: Wait this long after room is occupied to turn on fan (only relevant for toilet usage feature).
       default: 120
       selector:
         number:
@@ -88,8 +108,8 @@ blueprint:
           step: 60
           unit_of_measurement: seconds
     time_for_light_to_stay_on_after_unoccupied:
-      name: (Required) Helper - Time for light to stay on after unoccupied
-      description: Input number for the amount of time the light should stay on after the bathroom becomes unoccupied (in seconds).
+      name: Time for light to stay on after unoccupied (sec)
+      description: Time the light stays on after bathroom becomes unoccupied.
       default: 15
       selector:
         number:
@@ -97,14 +117,19 @@ blueprint:
           max: 300
           step: 5
           unit_of_measurement: seconds
-    helper_humidity_control_is_active:
-      name: (Required) Helper - Humidity Control Is Active
-      description: Input boolean for whether or not this exhaust fan has been turned on via humidity control automations.
+
+    # Toilet trigger (optional, only required if exhaust fan toilet feature)
+    toilet_trigger_sensor:
+      name: Toilet Usage Sensor (optional)
+      description: Input for sensor used to trigger exhaust fan after toilet usage (only required if toilet feature is enabled).
       selector:
         entity:
-          domain: input_boolean
+          domain: binary_sensor
+          multiple: false
+      default: ""
 
 trigger:
+  # Humidity triggers (only relevant if humidity control is enabled)
   - platform: numeric_state
     entity_id: !input humidity_sensor
     above: !input helper_high_humidity_number
@@ -115,6 +140,8 @@ trigger:
     id: arid
     for:
       minutes: 5
+
+  # Lights triggers
   - platform: state
     entity_id: !input occupancy_sensor
     from: "off"
@@ -125,7 +152,15 @@ trigger:
     from: "on"
     to: "off"
     id: unoccupied
-  # The following two triggers use templates for the 'for:' field to leverage input_number entities
+
+  # Exhaust fan for toilet feature (sensor trigger example, optional)
+  - platform: state
+    entity_id: !input toilet_trigger_sensor
+    from: "off"
+    to: "on"
+    id: toilet_usage
+
+  # Fan post-occupancy and delayed triggers
   - platform: state
     entity_id: !input occupancy_sensor
     from: "off"
@@ -142,27 +177,29 @@ trigger:
       seconds: !input time_for_fan_to_run_after_unoccupied
 
 variables:
-  enable_lights_control: !input enable_lights_control
   enable_humidity_control: !input enable_humidity_control
-  enable_exhaust_for_toilet: !input enable_exhaust_for_toilet
+  enable_lights_control: !input enable_lights_control
+  enable_exhaust_fan_toilet: !input enable_exhaust_fan_toilet
   humidity_sensor: !input humidity_sensor
   occupancy_sensor: !input occupancy_sensor
   lights_to_turn_on: !input lights_to_turn_on
   lights_to_turn_off: !input lights_to_turn_off
   exhaust_fan_switch: !input exhaust_fan_switch
+  helper_high_humidity_number: !input helper_high_humidity_number
   helper_humidity_control_is_active: !input helper_humidity_control_is_active
   time_for_fan_to_run_after_unoccupied: !input time_for_fan_to_run_after_unoccupied
   time_for_light_to_stay_on_after_unoccupied: !input time_for_light_to_stay_on_after_unoccupied
   time_before_exhaust_fan_turns_on_after_occupied: !input time_before_exhaust_fan_turns_on_after_occupied
+  toilet_trigger_sensor: !input toilet_trigger_sensor
 
 action:
   - choose:
-      # Light Control
+      # Lights automation
       - conditions:
           - condition: trigger
             id: occupied
           - condition: template
-            value_template: "{{ enable_lights_control }}"
+            value_template: "{{ enable_lights_control and (lights_to_turn_on | length > 0) }}"
         sequence:
           - service: light.turn_on
             target:
@@ -171,48 +208,19 @@ action:
           - condition: trigger
             id: unoccupied
           - condition: template
-            value_template: "{{ enable_lights_control }}"
+            value_template: "{{ enable_lights_control and (lights_to_turn_off | length > 0) }}"
         sequence:
           - service: light.turn_off
             target:
               entity_id: !input lights_to_turn_off
 
-      # Exhaust For Toilet
-      - conditions:
-          - condition: trigger
-            id: occupied_fan
-          - condition: template
-            value_template: "{{ enable_exhaust_for_toilet }}"
-        sequence:
-          - condition: state
-            entity_id: !input exhaust_fan_switch
-            state: "off"
-          - service: switch.turn_on
-            target:
-              entity_id: !input exhaust_fan_switch
-      - conditions:
-          - condition: trigger
-            id: unoccupied_fan
-          - condition: template
-            value_template: "{{ enable_exhaust_for_toilet }}"
-        sequence:
-          - condition: state
-            entity_id: !input exhaust_fan_switch
-            state: "on"
-          - service: switch.turn_off
-            target:
-              entity_id: !input exhaust_fan_switch
-
-      # Humidity Control
+      # Humidity automation
       - conditions:
           - condition: trigger
             id: humid
           - condition: template
-            value_template: "{{ enable_humidity_control }}"
+            value_template: "{{ enable_humidity_control and humidity_sensor != '' }}"
         sequence:
-          - condition: state
-            entity_id: !input exhaust_fan_switch
-            state: "off"
           - service: switch.turn_on
             target:
               entity_id: !input exhaust_fan_switch
@@ -223,10 +231,43 @@ action:
           - condition: trigger
             id: arid
           - condition: template
-            value_template: "{{ enable_humidity_control }}"
+            value_template: >-
+              {{ enable_humidity_control and
+                 humidity_sensor != '' and
+                 helper_humidity_control_is_active != '' }}
+        sequence:
+          - service: switch.turn_off
+            target:
+              entity_id: !input exhaust_fan_switch
+          - service: input_boolean.turn_off
+            target:
+              entity_id: !input helper_humidity_control_is_active
+
+      # Exhaust fan for toilet usage
+      - conditions:
+          - condition: trigger
+            id: toilet_usage
+          - condition: template
+            value_template: "{{ enable_exhaust_fan_toilet and toilet_trigger_sensor != '' }}"
+        sequence:
+          - service: switch.turn_on
+            target:
+              entity_id: !input exhaust_fan_switch
+
+      # Exhaust fan post-occupancy timers (always enabled if fan switch set)
+      - conditions:
+          - condition: trigger
+            id: occupied_fan
+        sequence:
           - condition: state
-            entity_id: !input helper_humidity_control_is_active
-            state: "on"
+            entity_id: !input exhaust_fan_switch
+            state: "off"
+          - service: switch.turn_on
+            target:
+              entity_id: !input exhaust_fan_switch
+      - conditions:
+          - condition: trigger
+            id: unoccupied_fan
         sequence:
           - condition: state
             entity_id: !input exhaust_fan_switch
@@ -234,6 +275,3 @@ action:
           - service: switch.turn_off
             target:
               entity_id: !input exhaust_fan_switch
-          - service: input_boolean.turn_off
-            target:
-              entity_id: !input helper_humidity_control_is_active
