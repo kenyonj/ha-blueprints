@@ -137,6 +137,9 @@ trigger:
       seconds: !input time_for_fan_to_run_after_unoccupied
 
 variables:
+  enable_lights_control: !input enable_lights_control
+  enable_humidity_control: !input enable_humidity_control
+  enable_exhaust_for_toilet: !input enable_exhaust_for_toilet
   humidity_sensor: !input humidity_sensor
   occupancy_sensor: !input occupancy_sensor
   lights_to_turn_on: !input lights_to_turn_on
