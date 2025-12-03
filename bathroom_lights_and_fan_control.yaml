@@ -25,30 +25,35 @@ blueprint:
         boolean:
     occupancy_sensor:
       name: Occupancy Sensor
+      default: ""
       selector:
         entity:
           domain: binary_sensor
           device_class: occupancy
     humidity_sensor:
       name: Humidity Sensor
+      default: ""
       selector:
         entity:
           domain: sensor
           device_class: humidity
     lights_to_turn_on:
       name: Lights to turn on
+      default: ""
       selector:
         entity:
           domain: light
           multiple: true
     lights_to_turn_off:
       name: Lights to turn off
+      default: ""
       selector:
         entity:
           domain: light
           multiple: true
     exhaust_fan_switch:
       name: Exhaust Fan Switch
+      default: ""
       selector:
         entity:
           domain: switch
