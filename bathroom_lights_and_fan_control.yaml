@@ -118,16 +118,6 @@ blueprint:
           step: 5
           unit_of_measurement: seconds
 
-    # Toilet trigger (optional, only required if exhaust fan toilet feature)
-    toilet_trigger_sensor:
-      name: Toilet Usage Sensor (optional)
-      description: Input for sensor used to trigger exhaust fan after toilet usage (only required if toilet feature is enabled).
-      selector:
-        entity:
-          domain: binary_sensor
-          multiple: false
-      default: ""
-
 trigger:
   # Humidity triggers (only relevant if humidity control is enabled)
   - platform: numeric_state
@@ -152,13 +142,6 @@ trigger:
     from: "on"
     to: "off"
     id: unoccupied
-
-  # Exhaust fan for toilet feature (sensor trigger example, optional)
-  - platform: state
-    entity_id: !input toilet_trigger_sensor
-    from: "off"
-    to: "on"
-    id: toilet_usage
 
   # Fan post-occupancy and delayed triggers
   - platform: state
@@ -190,7 +173,6 @@ variables:
   time_for_fan_to_run_after_unoccupied: !input time_for_fan_to_run_after_unoccupied
   time_for_light_to_stay_on_after_unoccupied: !input time_for_light_to_stay_on_after_unoccupied
   time_before_exhaust_fan_turns_on_after_occupied: !input time_before_exhaust_fan_turns_on_after_occupied
-  toilet_trigger_sensor: !input toilet_trigger_sensor
 
 action:
   - choose:
@@ -248,7 +230,7 @@ action:
           - condition: trigger
             id: toilet_usage
           - condition: template
-            value_template: "{{ enable_exhaust_fan_toilet and toilet_trigger_sensor != '' }}"
+            value_template: "{{ enable_exhaust_fan_toilet }}"
         sequence:
           - service: switch.turn_on
             target:
