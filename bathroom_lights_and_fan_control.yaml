@@ -29,6 +29,7 @@ blueprint:
     # Shared Entities
     occupancy_sensor:
       name: Occupancy Sensor
+      default: ""
       selector:
         entity:
           domain: binary_sensor
