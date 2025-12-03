@@ -154,7 +154,7 @@ action:
           - condition: trigger
             id: occupied
           - condition: template
-            value_template: "{{ !input enable_lights_control }}"
+            value_template: "{{ enable_lights_control }}"
         sequence:
           - service: light.turn_on
             target:
@@ -163,7 +163,7 @@ action:
           - condition: trigger
             id: unoccupied
           - condition: template
-            value_template: "{{ !input enable_lights_control }}"
+            value_template: "{{ enable_lights_control }}"
         sequence:
           - service: light.turn_off
             target:
@@ -174,7 +174,7 @@ action:
           - condition: trigger
             id: occupied_fan
           - condition: template
-            value_template: "{{ !input enable_exhaust_for_toilet }}"
+            value_template: "{{ enable_exhaust_for_toilet }}"
         sequence:
           - condition: state
             entity_id: !input exhaust_fan_switch
@@ -186,7 +186,7 @@ action:
           - condition: trigger
             id: unoccupied_fan
           - condition: template
-            value_template: "{{ !input enable_exhaust_for_toilet }}"
+            value_template: "{{ enable_exhaust_for_toilet }}"
         sequence:
           - condition: state
             entity_id: !input exhaust_fan_switch
@@ -200,7 +200,7 @@ action:
           - condition: trigger
             id: humid
           - condition: template
-            value_template: "{{ !input enable_humidity_control }}"
+            value_template: "{{ enable_humidity_control }}"
         sequence:
           - condition: state
             entity_id: !input exhaust_fan_switch
@@ -215,7 +215,7 @@ action:
           - condition: trigger
             id: arid
           - condition: template
-            value_template: "{{ !input enable_humidity_control }}"
+            value_template: "{{ enable_humidity_control }}"
           - condition: state
             entity_id: !input helper_humidity_control_is_active
             state: "on"
