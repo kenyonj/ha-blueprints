@@ -30,27 +30,43 @@ blueprint:
     helper_high_humidity_number:
       name: (Required) Helper - High Humidity Number
       description: Input number for the humidity number that will trigger this automation. You will need to manually create a number input entity for this, please read the blueprint Additional Notes for more info.
+      default: 60
       selector:
-        entity:
-          domain: input_number
-    helper_time_for_fan_to_run_after_unoccupied:
+        number:
+          min: 30
+          max: 80
+          step: 1
+          unit_of_measurement: percent
+    time_for_fan_to_run_after_unoccupied:
       name: (Required) Helper - Time for fan to run after unoccupied
       description: Input number for the amount of time the exhaust fan should run after the bathroom becomes unoccupied (in seconds).
+      default: 600
       selector:
-        entity:
-          domain: input_number
-    helper_time_before_exhaust_fan_turns_on_after_occupied:
+        number:
+          min: 60
+          max: 3600
+          step: 60
+          unit_of_measurement: seconds
+    time_before_exhaust_fan_turns_on_after_occupied:
       name: (Required) Helper - Time before exhaust fan turns on after occupied
       description: Input number for the amount of time after the bathroom is occupied to wait until turning on the exhaust fan (in seconds).
+      default: 120
       selector:
-        entity:
-          domain: input_number
-    helper_time_for_light_to_stay_on_after_unoccupied:
+        number:
+          min: 60
+          max: 3600
+          step: 60
+          unit_of_measurement: seconds
+    time_for_light_to_stay_on_after_unoccupied:
       name: (Required) Helper - Time for light to stay on after unoccupied
       description: Input number for the amount of time the light should stay on after the bathroom becomes unoccupied (in seconds).
+      default: 15
       selector:
-        entity:
-          domain: input_number
+        number:
+          min: 5
+          max: 300
+          step: 5
+          unit_of_measurement: seconds
     helper_humidity_control_is_active:
       name: (Required) Helper - Humidity Control Is Active
       description: Input boolean for whether or not this exhaust fan has been turned on via humidity control automations.
@@ -86,14 +102,14 @@ trigger:
     to: "on"
     id: occupied_fan
     for:
-      seconds: !input helper_time_before_exhaust_fan_turns_on_after_occupied
+      seconds: !input time_before_exhaust_fan_turns_on_after_occupied
   - platform: state
     entity_id: !input occupancy_sensor
     from: "on"
     to: "off"
     id: unoccupied_fan
     for:
-      seconds: !input helper_time_for_fan_to_run_after_unoccupied
+      seconds: !input time_for_fan_to_run_after_unoccupied
 
 variables:
   humidity_sensor: !input humidity_sensor
@@ -101,9 +117,9 @@ variables:
   light_switch: !input light_switch
   exhaust_fan_switch: !input exhaust_fan_switch
   helper_humidity_control_is_active: !input helper_humidity_control_is_active
-  helper_time_for_fan_to_run_after_unoccupied: !input helper_time_for_fan_to_run_after_unoccupied
-  helper_time_for_light_to_stay_on_after_unoccupied: !input helper_time_for_light_to_stay_on_after_unoccupied
-  helper_time_before_exhaust_fan_turns_on_after_occupied: !input helper_time_before_exhaust_fan_turns_on_after_occupied
+  time_for_fan_to_run_after_unoccupied: !input time_for_fan_to_run_after_unoccupied
+  time_for_light_to_stay_on_after_unoccupied: !input time_for_light_to_stay_on_after_unoccupied
+  time_before_exhaust_fan_turns_on_after_occupied: !input time_before_exhaust_fan_turns_on_after_occupied
 
 action:
   - choose:
