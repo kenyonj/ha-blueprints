@@ -221,7 +221,7 @@ action:
           - service: switch.turn_off
             target:
               entity_id: !input exhaust_fan_switch
-          - service: input_boolean. turn_off
+          - service: input_boolean.turn_off
             target: 
               entity_id: !input helper_humidity_control_is_active
 
@@ -235,7 +235,7 @@ action:
           - condition: template
             value_template: "{{ helper_humidity_control_is_active == '' or (helper_humidity_control_is_active != '' and is_state(helper_humidity_control_is_active, 'off')) }}"
           - condition:  state
-            entity_id: ! input exhaust_fan_switch
+            entity_id: !input exhaust_fan_switch
             state: "off"
           - service: switch.turn_on
             target:
