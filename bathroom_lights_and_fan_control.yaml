@@ -56,6 +56,7 @@ blueprint:
     # Exhaust fan (optional, only required for humidity/toilet features)
     exhaust_fan_switch:
       name: Exhaust Fan Switch
+      default: ""
       selector:
         entity:
           domain: switch
@@ -157,8 +158,6 @@ trigger:
     from: "on"
     to: "off"
     id: unoccupied_fan
-    for:
-      seconds: !input time_for_fan_to_run_after_unoccupied
 
 variables:
   enable_humidity_control: !input enable_humidity_control
@@ -193,6 +192,11 @@ action:
           - condition: template
             value_template: "{{ enable_lights_control and (lights_to_turn_off | length > 0) }}"
         sequence:
+          - delay:
+              seconds: !input time_for_light_to_stay_on_after_unoccupied
+          - condition: state
+            entity_id: !input occupancy_sensor
+            state: "off"
           - service: light.turn_off
             target:
               entity_id: !input lights_to_turn_off
@@ -226,22 +230,15 @@ action:
             target:
               entity_id: !input helper_humidity_control_is_active
 
-      # Exhaust fan for toilet usage
-      - conditions:
-          - condition: trigger
-            id: toilet_usage
-          - condition: template
-            value_template: "{{ enable_exhaust_fan_toilet }}"
-        sequence:
-          - service: switch.turn_on
-            target:
-              entity_id: !input exhaust_fan_switch
-
-      # Exhaust fan post-occupancy timers (always enabled if fan switch set)
+      # Exhaust fan for toilet usage (uses occupied_fan trigger with delay)
       - conditions:
           - condition: trigger
             id: occupied_fan
+          - condition: template
+            value_template: "{{ enable_exhaust_fan_toilet }}"
         sequence:
+          - condition: template
+            value_template: "{{ helper_humidity_control_is_active == '' or (helper_humidity_control_is_active != '' and is_state(helper_humidity_control_is_active, 'off')) }}"
           - condition: state
             entity_id: !input exhaust_fan_switch
             state: "off"
@@ -252,6 +249,10 @@ action:
           - condition: trigger
             id: unoccupied_fan
         sequence:
+          - delay:
+              seconds: !input time_for_fan_to_run_after_unoccupied
+          - condition: template
+            value_template: "{{ helper_humidity_control_is_active == '' or (helper_humidity_control_is_active != '' and is_state(helper_humidity_control_is_active, 'off')) }}"
           - condition: state
             entity_id: !input exhaust_fan_switch
             state: "on"
